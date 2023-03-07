@@ -1,7 +1,9 @@
 ﻿@page "/"
+@using UploadFilesLibrary;
 @using UploadFileApp.Data;
 
 @inject IConfiguration _config;
+@inject ISqlDataAccess _sql;
 
 <PageTitle>Index</PageTitle>
 
@@ -38,7 +40,6 @@
 
 @code {
     private long maxFileSize = 1024 * 1024 * 3; //represents 3MB size
-    private int maxAllowedFiles = 3;
     private List<string> errors = new();
 
     private CutstomerModel newCustomer = new CutstomerModel();
@@ -46,10 +47,18 @@
 
     private async Task SubmitForm()
     {
+        errors.Clear();
+
         try
         {
             string relativePath = await CaptureFile();
             newCustomer.FileName = relativePath;
+
+            await _sql.SaveData("dbo.Customer_Insert", "Default", newCustomer);
+
+            newCustomer = new();
+            file = null;
+            errors.Clear();
 
         }
         catch(Exception e)
