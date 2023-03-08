@@ -21,7 +21,7 @@
     </div>
     <div>
         <label for="profilePicture">Profile Picture:</label>
-        <InputFile class="form-control"OnChange="LoadFile" accept=".pdf,.txt,.csv"></InputFile>
+        <InputFile class="form-control" OnChange="LoadFile" accept=".pdf,.txt,.csv"></InputFile>
     </div>
     <button class="btn-primary mt-3" type="submit"> Create Customer</button>
 </EditForm>
@@ -38,12 +38,59 @@
     </ul>
 }
 
+@if (customers is not null)
+{
+    <h2>Existing Customers</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>File</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in customers)
+            {
+                <tr>
+                    <td>@customer.Id</td>
+                    <td>@customer.FirstName</td>
+                    <td>@customer.LastName</td>
+                    <td> @if (string.IsNullOrEmpty(customer.FileName) == false)
+                        {
+                            
+                            <embed src="@CreateFullPath(customer.FileName)" width="100" height="2100" />
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 @code {
     private long maxFileSize = 1024 * 1024 * 3; //represents 3MB size
     private List<string> errors = new();
 
     private CutstomerModel newCustomer = new CutstomerModel();
+    private List<CutstomerModel> customers = new List<CutstomerModel>();
     private IBrowserFile? file;
+
+    private async Task LoadCustomer()
+    {
+        customers = await _sql.LoadData<CutstomerModel>("dbo.Customer_GetAll", "Default", new { });
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomer();
+    }
+
+    private string CreateFullPath(string relativePath)
+    {
+        return Path.Combine(_config.GetValue<string>("WebStorageRoot")!, relativePath);
+    }
 
     private async Task SubmitForm()
     {
@@ -60,8 +107,9 @@
             file = null;
             errors.Clear();
 
+            await LoadCustomer();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             errors.Add($"Error: {e.Message}");
         }
@@ -90,7 +138,7 @@
 
             string path = Path.Combine(_config.GetValue<string>("FileStorage")!, "dlavanchy", newFileName);
 
-            string relativePath = Path.Combine("tcoery", newFileName);
+            string relativePath = Path.Combine("dlavanchy", newFileName);
 
             Directory.CreateDirectory(Path.Combine(Path.Combine(_config.GetValue<string>("FileStorage")!, "dlavanchy")));
 

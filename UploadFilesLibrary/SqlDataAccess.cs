@@ -15,6 +15,24 @@ namespace UploadFilesLibrary
             _config = config;
         }
 
+        public async Task<List<T>> LoadData<T>(
+            string storedProcedure,
+            string connectionName,
+            object parameters)
+        {
+            string connectionString = _config.GetConnectionString(connectionName)
+                ?? throw new Exception($"Missing connection string {connectionName}");
+
+            using var connection = new SqlConnection(connectionString);
+
+            var rows = await connection.QueryAsync<T>(
+                storedProcedure,
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure);
+
+                return rows.ToList();
+        }
+
         public async Task SaveData(
             string storedProcedure,
             string connectionName,
